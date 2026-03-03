@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Jug Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --jug-blue: #3b82f6;
+            --jug-bg: rgba(255, 255, 255, 0.1);
+            --jug-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #0f172a, #1e293b);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--jug-border);
+            border-radius: 24px;
+        }
+
+        .jug-container {
+            position: relative;
+            width: 140px;
+            background: var(--jug-bg);
+            border: 3px solid var(--jug-border);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+            transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: inset 0 4px 12px rgba(255, 255, 255, 0.3);
+        }
+
+        .water::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            filter: blur(4px);
+            animation: wave 3s infinite linear;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .btn-action {
+            @apply px-4 py-2 rounded-xl font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #60a5fa;
+        }
+
+        .history-item {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 mb-2">
+                Water Jug Challenge
+            </h1>
+            <p class="text-slate-400 font-light">Can you measure the target amount exactly?</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Panel: Configuration & Controls -->
+            <div class="lg:col-span-4 space-y-6">
+                <section class="glass p-6">
+                    <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Setup
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Jug A Capacity</label>
+                            <input type="number" id="capA" value="5" min="1" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Jug B Capacity</label>
+                            <input type="number" id="capB" value="3" min="1" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Target Volume</label>
+                            <input type="number" id="target" value="4" min="1" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button onclick="resetGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-900/20 transition-all">
+                            Apply & Reset
+                        </button>
+                    </div>
+                </section>
+
+                <section class="glass p-6 overflow-hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Log
+                    </h2>
+                    <div id="history" class="space-y-2 h-64 overflow-y-auto pr-2 text-sm">
+                        <div class="text-slate-500 italic">No moves yet...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Middle Panel: Visualization -->
+            <div class="lg:col-span-5 flex flex-col items-center glass p-8">
+                <div class="flex gap-12 items-end mb-12 min-h-[300px]">
+                    <!-- Jug A -->
+                    <div class="flex flex-col items-center">
+                        <div id="jugA-visual" class="jug-container" style="height: 250px;">
+                            <div id="waterA" class="water" style="height: 0%;"></div>
+                            <div class="absolute inset-0 flex items-center justify-center font-bold text-2xl drop-shadow-md">
+                                <span id="valA">0</span><span class="text-xs ml-1 opacity-70">L</span>
+                            </div>
+                        </div>
+                        <span class="mt-4 font-semibold text-slate-300">Jug A (<span id="maxA">5</span>L)</span>
+                    </div>
+
+                    <!-- Jug B -->
+                    <div class="flex flex-col items-center">
+                        <div id="jugB-visual" class="jug-container" style="height: 180px;">
+                            <div id="waterB" class="water" style="height: 0%;"></div>
+                            <div class="absolute inset-0 flex items-center justify-center font-bold text-2xl drop-shadow-md">
+                                <span id="valB">0</span><span class="text-xs ml-1 opacity-70">L</span>
+                            </div>
+                        </div>
+                        <span class="mt-4 font-semibold text-slate-300">Jug B (<span id="maxB">3</span>L)</span>
+                    </div>
+                </div>
+
+                <!-- Interaction Controls -->
+                <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    <div class="space-y-2">
+                        <p class="text-xs text-center text-slate-500 uppercase tracking-widest font-bold">Jug A</p>
+                        <button onclick="fillA()" class="btn-action w-full">Fill</button>
+                        <button onclick="emptyA()" class="btn-action w-full">Empty</button>
+                        <button onclick="transferAtoB()" class="btn-action w-full">A → B</button>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-xs text-center text-slate-500 uppercase tracking-widest font-bold">Jug B</p>
+                        <button onclick="fillB()" class="btn-action w-full">Fill</button>
+                        <button onclick="emptyB()" class="btn-action w-full">Empty</button>
+                        <button onclick="transferBtoA()" class="btn-action w-full">B → A</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Solver & Info -->
+            <div class="lg:col-span-3 space-y-6">
+                <section class="glass p-6 border-blue-500/30">
+                    <h2 class="text-xl font-semibold mb-2">Target</h2>
+                    <div class="flex items-baseline gap-2">
+                        <span id="targetDisplay" class="text-5xl font-black text-blue-400">4</span>
+                        <span class="text-slate-400">Liters</span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-4 leading-relaxed">
+                        Find a way to make exactly this amount in either jug.
+                    </p>
+                </section>
+
+                <section class="glass p-6">
+                    <h2 class="text-xl font-semibold mb-4">Solver</h2>
+                    <button id="solveBtn" onclick="autoSolve()" class="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all text-sm font-medium">
+                        Show AI Solution
+                    </button>
+                    <div id="solutionSteps" class="mt-4 text-xs text-slate-400 space-y-1 max-h-40 overflow-y-auto">
+                        <!-- Solution steps appear here -->
+                    </div>
+                </section>
+
+                <div id="winModal" class="hidden glass p-6 border-green-500 bg-green-500/10 text-center animate-bounce">
+                    <h3 class="text-2xl font-bold text-green-400">Solved! 🎉</h3>
+                    <p class="text-sm text-green-200 mt-1">Great job!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Feedback Toast -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 glass px-6 py-3 opacity-0 transition-opacity pointer-events-none z-50">
+        <span id="toastMsg">Action performed</span>
+    </div>
+
+    <script>
+        let jugA = 0;
+        let jugB = 0;
+        let capA = 5;
+        let capB = 3;
+        let target = 4;
+        let moves = 0;
+        let isSolved = false;
+
+        function updateUI() {
+            // Numeric values
+            document.getElementById('valA').innerText = jugA;
+            document.getElementById('valB').innerText = jugB;
+            
+            // Visual water levels
+            const pctA = (jugA / capA) * 100;
+            const pctB = (jugB / capB) * 100;
+            document.getElementById('waterA').style.height = `${pctA}%`;
+            document.getElementById('waterB').style.height = `${pctB}%`;
+
+            // Check win condition
+            if ((jugA === target || jugB === target) && !isSolved) {
+                isSolved = true;
+                document.getElementById('winModal').classList.remove('hidden');
+                showToast("Target reached!");
+            }
+        }
+
+        function logAction(msg) {
+            const history = document.getElementById('history');
+            if (moves === 0) history.innerHTML = '';
+            
+            moves++;
+            const item = document.createElement('div');
+            item.className = 'history-item flex justify-between p-2 rounded bg-white/5 border border-white/5';
+            item.innerHTML = `<span>${msg}</span> <span class="text-slate-500">(${jugA}, ${jugB})</span>`;
+            history.prepend(item);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+
+        function fillA() {
+            if (jugA === capA) return;
+            jugA = capA;
+            logAction("Filled A");
+            updateUI();
+        }
+
+        function fillB() {
+            if (jugB === capB) return;
+            jugB = capB;
+            logAction("Filled B");
+            updateUI();
+        }
+
+        function emptyA() {
+            if (jugA === 0) return;
+            jugA = 0;
+            logAction("Emptied A");
+            updateUI();
+        }
+
+        function emptyB() {
+            if (jugB === 0) return;
+            jugB = 0;
+            logAction("Emptied B");
+            updateUI();
+        }
+
+        function transferAtoB() {
+            const spaceInB = capB - jugB;
+            const amount = Math.min(jugA, spaceInB);
+            if (amount === 0) return;
+            jugA -= amount;
+            jugB += amount;
+            logAction("Poured A to B");
+            updateUI();
+        }
+
+        function transferBtoA() {
+            const spaceInA = capA - jugA;
+            const amount = Math.min(jugB, spaceInA);
+            if (amount === 0) return;
+            jugB -= amount;
+            jugA += amount;
+            logAction("Poured B to A");
+            updateUI();
+        }
+
+        function resetGame() {
+            capA = parseInt(document.getElementById('capA').value) || 5;
+            capB = parseInt(document.getElementById('capB').value) || 3;
+            target = parseInt(document.getElementById('target').value) || 4;
+
+            // Simple validation
+            if (target > Math.max(capA, capB)) {
+                showToast("Target too large!");
+                return;
+            }
+
+            // GCD logic for solvability
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            if (target % gcd(capA, capB) !== 0) {
+                showToast("Impossible with these capacities!");
+            }
+
+            jugA = 0;
+            jugB = 0;
+            moves = 0;
+            isSolved = false;
+
+            document.getElementById('maxA').innerText = capA;
+            document.getElementById('maxB').innerText = capB;
+            document.getElementById('targetDisplay').innerText = target;
+            document.getElementById('history').innerHTML = '<div class="text-slate-500 italic">No moves yet...</div>';
+            document.getElementById('solutionSteps').innerHTML = '';
+            document.getElementById('winModal').classList.add('hidden');
+            
+            // Adjust visual heights based on max capacity
+            const maxHeight = 250;
+            const ratio = capA / capB;
+            if (capA > capB) {
+                document.getElementById('jugA-visual').style.height = `${maxHeight}px`;
+                document.getElementById('jugB-visual').style.height = `${maxHeight / ratio}px`;
+            } else {
+                document.getElementById('jugB-visual').style.height = `${maxHeight}px`;
+                document.getElementById('jugA-visual').style.height = `${maxHeight * ratio}px`;
+            }
+
+            updateUI();
+            showToast("Environment Reset");
+        }
+
+        // BFS Solver
+        function autoSolve() {
+            const startState = [0, 0, []]; // [a, b, path]
+            const queue = [startState];
+            const visited = new Set();
+            visited.add("0,0");
+
+            const solutionContainer = document.getElementById('solutionSteps');
+            solutionContainer.innerHTML = 'Calculating...';
+
+            while (queue.length > 0) {
+                const [a, b, path] = queue.shift();
+
+                if (a === target || b === target) {
+                    displaySolution(path);
+                    return;
+                }
+
+                const states = [
+                    { n: [capA, b], m: `Fill A` },
+                    { n: [a, capB], m: `Fill B` },
+                    { n: [0, b], m: `Empty A` },
+                    { n: [a, 0], m: `Empty B` },
+                    { n: [Math.max(0, a - (capB - b)), Math.min(capB, b + a)], m: `Pour A to B` },
+                    { n: [Math.min(capA, a + b), Math.max(0, b - (capA - a))], m: `Pour B to A` }
+                ];
+
+                for (let state of states) {
+                    const key = `${state.n[0]},${state.n[1]}`;
+                    if (!visited.has(key)) {
+                        visited.add(key);
+                        queue.push([...state.n, [...path, state.m]]);
+                    }
+                }
+            }
+            solutionContainer.innerHTML = "No solution possible.";
+        }
+
+        function displaySolution(path) {
+            const solutionContainer = document.getElementById('solutionSteps');
+            solutionContainer.innerHTML = '';
+            path.forEach((step, i) => {
+                const p = document.createElement('p');
+                p.innerText = `${i + 1}. ${step}`;
+                solutionContainer.appendChild(p);
+            });
+        }
+
+        // Init
+        window.onload = resetGame;
+    </script>
+</body>
+</html>
